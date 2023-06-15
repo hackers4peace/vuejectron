@@ -15,7 +15,7 @@ const routes = [
       {
         path: '/login',
         name: 'login',
-        component: () => import(/* webpackChunkName: "login" */ '@/views/Login.vue'),
+        component: () => import(/* webpackChunkName: "login" */ '@/views/Authn.vue'),
         meta: { public: true }
       },
       {
@@ -33,12 +33,16 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach(async (to, from) => {
   const coreStore = useCoreStore()
-  if (!to.meta.public && !coreStore.userId) {
-    return {
-      path: '/login',
-      // query: { redirect: to.fullPath },
+  await coreStore.restoreOidcSession()
+
+  if (!to.meta.public) {
+    if (!coreStore.userId || !coreStore.isAuthorized) {
+      return {
+        path: '/login',
+        // query: { redirect: to.fullPath },
+      }
     }
   }
 })

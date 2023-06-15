@@ -1,10 +1,11 @@
 <template>
-    {{ store.userId }}
-    <router-link :to="{name: 'dashboard'}">Go to Dashboard</router-link>
 </template>
 
 <script lang="ts" setup>
   import { useCoreStore } from '@/store/core';
+  import { useRouter } from 'vue-router';
   const store = useCoreStore()
-  store.handleRedirect(window.location.href)
+  const router = useRouter()
+  await store.handleRedirect(window.location.href)
+  router.push({ name: 'dashboard' })
 </script>
