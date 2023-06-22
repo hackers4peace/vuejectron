@@ -2,21 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue';
 import { ISessionInfo, getDefaultSession, handleIncomingRedirect, login as oidcLogin} from "@inrupt/solid-client-authn-browser";
 import { Application } from '@janeirodigital/interop-application';
+import { useSai } from '@/sai';
 
 class OidcError extends Error {
   constructor(private oidcInfo?: ISessionInfo) {
      super('oidcInfo');
   }
 }
-
-class NoSaiSessionError extends Error {
-  constructor() {
-    super('buildSession was not called');
-  }
-}
-
-let saiSession: Application | undefined;
-const authnFetch = getDefaultSession().fetch;
 
 export const useCoreStore = defineStore('core', () => {
   const userId = ref<string | null>(null)
@@ -39,34 +31,17 @@ export const useCoreStore = defineStore('core', () => {
     }
     userId.value = oidcInfo.webId
 
-    await buildSaiSession()
-    if (!saiSession) {
-      throw new NoSaiSessionError();
-    }
+    const sai = await useSai(oidcInfo.webId)
 
-    if (saiSession.hasApplicationRegistration) {
-      isAuthorized.value = !!saiSession.hasApplicationRegistration.hasAccessGrant.granted
-    } else if (saiSession.authorizationRedirectUri) {
-      authorizationRedirectUri.value = saiSession.authorizationRedirectUri
-    } else {
-      throw new Error('Impossible to authorize!')
-    }
-  }
-
-  async function buildSaiSession(): Promise<void> {
-    const deps = { fetch: authnFetch, randomUUID: crypto.randomUUID.bind(crypto) }
-    saiSession = await Application.build(userId.value!, import.meta.env.VITE_APPLICATION_ID, deps)
+    isAuthorized.value = await sai.isAuthorized()
   }
 
   async function authorize() {
-    if (!saiSession) {
-      throw new NoSaiSessionError();
+    if (!userId.value) {
+      throw new Error('no user id');
     }
-    if (saiSession.authorizationRedirectUri) {
-      window.location.href = saiSession.authorizationRedirectUri;
-    } else {
-      throw new Error('authorizationRedirectUri is undefined');
-    }
+    const sai = await useSai(userId.value!)
+    window.location.href = await sai.getAuthorizationRedirectUri()
   }
 
   async function restoreOidcSession(): Promise<void> {
@@ -74,7 +49,11 @@ export const useCoreStore = defineStore('core', () => {
 
     if (!oidcSession.info.isLoggedIn) {
       // if session can be restored it will redirect to oidcIssuer, which will return back to `/redirect`
-      await oidcSession.handleIncomingRedirect({ restorePreviousSession: true });
+      const oidcInfo = await oidcSession.handleIncomingRedirect({ restorePreviousSession: true });
+      if (!oidcInfo?.webId) {
+        throw new OidcError(oidcInfo);
+      }
+      userId.value = oidcInfo.webId
     }
   }
 
