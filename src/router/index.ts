@@ -1,4 +1,5 @@
 // Composables
+import { h } from 'vue'
 import { useCoreStore } from '@/store/core'
 import { createRouter, createWebHistory } from 'vue-router'
 
@@ -21,12 +22,14 @@ const routes = [
       {
         path: '/redirect',
         name: 'redirect',
-        component: () => import(/* webpackChunkName: "redirect" */ '@/views/Redirect.vue'),
+        beforeEnter: handleRedirect,
+        component: h('div'), // empty component
         meta: { public: true }
       },
     ],
   },
 ]
+
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
@@ -40,12 +43,18 @@ router.beforeEach(async (to, from) => {
   if (!to.meta.public) {
     if (!coreStore.userId || !coreStore.isAuthorized) {
       return {
-        path: '/login',
+        name: 'login',
         // query: { redirect: to.fullPath },
       }
     }
   }
 })
 
+async function handleRedirect() {
+  const coreStore = useCoreStore()
+  await coreStore.handleRedirect(window.location.href)
+
+  return { name: 'dashboard' }
+}
 
 export default router
