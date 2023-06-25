@@ -54,7 +54,7 @@ async function handleRedirect() {
   const coreStore = useCoreStore()
   await coreStore.handleRedirect(window.location.href)
 
-  return { name: 'dashboard' }
+  return { name: 'dashboard',  query: {agent: coreStore.userId}}
 }
 
 export default router

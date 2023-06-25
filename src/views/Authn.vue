@@ -6,11 +6,8 @@
         <v-btn type="submit" block class="mt-2">Login</v-btn>
       </v-form>
     </v-card-item>
-    <v-card-item v-else-if="!isAuthorized">
-      <v-btn @click="requestAuthorization" block class="mt-2">Request Authorization</v-btn>
-    </v-card-item>
     <v-card-item v-else>
-      <router-link :to="{name: 'dashboard'}">Go to Dashboard</router-link>
+      <v-btn @click="requestAuthorization" block class="mt-2">Request Authorization</v-btn>
     </v-card-item>
   </v-card>
 </template>
@@ -23,7 +20,6 @@
   const defaultOidcIssuer = import.meta.env.VITE_DEFAULT_OIDC_ISSUER
   const oidcIssuer = ref('')
   const userId = store.userId
-  const isAuthorized = store.isAuthorized
 
   // will redirect to OIDC issuer
   async function login() {
