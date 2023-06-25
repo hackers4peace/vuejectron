@@ -50,10 +50,9 @@ export const useCoreStore = defineStore('core', () => {
     if (!oidcSession.info.isLoggedIn) {
       // if session can be restored it will redirect to oidcIssuer, which will return back to `/redirect`
       const oidcInfo = await oidcSession.handleIncomingRedirect({ restorePreviousSession: true });
-      if (!oidcInfo?.webId) {
-        throw new OidcError(oidcInfo);
+      if (oidcInfo?.webId) {
+         userId.value = oidcInfo.webId;
       }
-      userId.value = oidcInfo.webId
     }
   }
 
