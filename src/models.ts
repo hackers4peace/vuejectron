@@ -38,3 +38,5 @@ export interface FileInstance {
   canUpdate?: boolean,
   canDelete?: boolean,
 }
+
+export interface ImageInstance extends FileInstance {}

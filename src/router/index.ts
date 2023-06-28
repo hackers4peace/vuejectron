@@ -12,6 +12,18 @@ const routes = [
         path: '',
         name: 'dashboard',
         component: () => import(/* webpackChunkName: "dashboard" */ '@/views/Dashboard.vue'),
+        children: [
+          {
+            path: '/project',
+            name: 'project',
+            component: () => import(/* webpackChunkName: "login" */ '@/views/Project.vue'),
+          },
+          {
+            path: '/task',
+            name: 'task',
+            component: () => import(/* webpackChunkName: "login" */ '@/views/Task.vue'),
+          },
+        ]
       },
       {
         path: '/login',

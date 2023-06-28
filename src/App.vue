@@ -1,3 +1,10 @@
+<style>
+  a {
+    text-decoration: none;
+  }
+  a:link    { color: black; }
+  a:visited { color: black; }
+</style>
 <template>
   <Suspense>
     <router-view />

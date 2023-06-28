@@ -1,6 +1,6 @@
 import { getDefaultSession } from "@inrupt/solid-client-authn-browser";
 import { Application } from "@janeirodigital/interop-application";
-import { Agent, Project, Registration } from "@/models";
+import { Agent, Project, Registration, Task, FileInstance, ImageInstance } from "@/models";
 import { ACL, RDFS, buildNamespace } from "@janeirodigital/interop-utils";
 import { DataInstance } from "@janeirodigital/interop-data-model";
 
@@ -65,7 +65,7 @@ export function useSai(userId: string | null) {
     webId = userId
   }
 
-  return { isAuthorized, getAuthorizationRedirectUri, getAgents, getProjects}
+  return { isAuthorized, getAuthorizationRedirectUri, getAgents, getProjects, getTasks, getFiles, getImages, dataUrl}
 }
 
 async function ensureSaiSession(): Promise<Application> {
@@ -119,4 +119,58 @@ async function getProjects(ownerId: string): Promise<{ownerId: string, projects:
     }
   }
   return {ownerId, projects, registrations}
+}
+
+
+async function getTasks(projectId: string): Promise<{projectId: string, tasks: Task[]}> {
+  await ensureSaiSession()
+  const project = cache[projectId]
+  if (!project) {
+    throw new Error(`Project not found for: ${projectId}`)
+  }
+  const tasks = [];
+  for await (const dataInstance of project.getChildInstancesIterator(shapeTrees.task)) {
+    cache[dataInstance.iri] = dataInstance
+    tasks.push(instance2Task(dataInstance, projectId, ownerIndex[projectId]));
+  }
+
+  return {projectId, tasks}
+}
+
+async function getFiles(projectId: string): Promise<{projectId: string, files: FileInstance[]}> {
+  await ensureSaiSession()
+  const project = cache[projectId]
+  if (!project) {
+    throw new Error(`Project not found for: ${projectId}`)
+  }
+  const files = [];
+  for await (const dataInstance of project.getChildInstancesIterator(shapeTrees.file)) {
+    cache[dataInstance.iri] = dataInstance
+    files.push(instance2File(dataInstance, projectId, ownerIndex[projectId]));
+  }
+
+  return {projectId, files}
+}
+
+async function getImages(projectId: string): Promise<{projectId: string, images: ImageInstance[]}> {
+  await ensureSaiSession()
+  const project = cache[projectId]
+  if (!project) {
+    throw new Error(`Project not found for: ${projectId}`)
+  }
+  const images = [];
+  for await (const dataInstance of project.getChildInstancesIterator(shapeTrees.image)) {
+    cache[dataInstance.iri] = dataInstance
+    images.push(instance2File(dataInstance, projectId, ownerIndex[projectId]));
+  }
+
+  return {projectId, images}
+}
+
+
+async function dataUrl(url: string): Promise<string> {
+  const fetch = getDefaultSession().fetch
+  return fetch(url)
+    .then(response => response.blob())
+    .then(blb => URL.createObjectURL(blb))
 }
