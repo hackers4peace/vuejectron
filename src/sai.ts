@@ -52,6 +52,20 @@ function instance2File(instance: DataInstance, project: string, owner: string): 
   }
 }
 
+function getAccessModes(task: Task) {
+  const project = cache[task.project]
+  if (!project) {
+    throw new Error(`Project not found for: ${task.project}`)
+  }
+
+  const dataGrant = project.findChildGrant(shapeTrees.task)
+  return {
+    canUpdate: dataGrant.accessMode.includes(ACL.Update.value),
+    canDelete: dataGrant.accessMode.includes(ACL.Delete.value)
+  }
+
+}
+
 let saiSession: Application | undefined;
 let webId: string
 
@@ -75,7 +89,8 @@ export function useSai(userId: string | null) {
     deleteTask,
     getFiles,
     getImages,
-    dataUrl
+    dataUrl,
+    getAccessModes,
   }
 }
 

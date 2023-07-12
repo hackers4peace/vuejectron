@@ -1,9 +1,18 @@
 <template>
     <h2>{{ project?.label }}</h2>
-    <h3>Tasks</h3>
+    <h3>
+      Tasks
+      <v-btn size="small" @click="newTask" color="surface-variant" variant="text" icon="mdi-plus"></v-btn>
+    </h3>
     <v-list>
       <v-list-item v-for="task in appStore.tasks" :key="task.id">
-        <task-card :task="task" @update="updateTask" @delete="deleteTask"></task-card>
+        <v-card>
+          <v-card-title>{{ task.label }}</v-card-title>
+          <v-card-actions>
+            <v-btn v-if="task.canUpdate" @click="editTask(task)" size="small" color="surface-variant" variant="text" icon="mdi-square-edit-outline"></v-btn>
+            <v-btn v-if="task.canDelete" @click="deleteTask(task)" size="small" color="surface-variant" variant="text" icon="mdi-delete-outline"></v-btn>
+          </v-card-actions>
+        </v-card>
       </v-list-item>
     </v-list>
     <h3>Files</h3>
@@ -20,6 +29,7 @@
         <img :src="dataUrl"/>
       </v-list-item>
     </v-list>
+    <input-dialog :text="selectedTask?.label" :dialog="dialog" @cancel="dialog = false" @save="updateTask"></input-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -32,7 +42,7 @@
   import { useCoreStore } from '@/store/core';
   import { FileInstance, Task } from '@/models';
 
-  import TaskCard from '@/components/TaskCard.vue';
+  import InputDialog from '@/components/InputDialog.vue';
 
   const download = ref<HTMLAnchorElement>()
 
@@ -41,6 +51,10 @@
 
   const route = useRoute()
   const projectId = ref(route.query.project)
+  const dialog = ref(false)
+
+  const selectedTask = ref<Task | null>(null)
+
 
   const appStore = useAppStore()
   const project = computed(() => appStore.projects.find(p => p.id === projectId.value))
@@ -70,13 +84,31 @@
     }
   }
 
-  function updateTask(task: Task) {
-    appStore.updateTask(task)
+  function updateTask(label: string) {
+    if (selectedTask.value) {
+      appStore.updateTask({...selectedTask.value, label})
+      selectedTask.value = null
+    } else {
+      if (label && project.value) {
+        const task = { id: 'DRAFT', label, project: project.value.id, owner: project.value.owner }
+        appStore.updateTask(task)
+      }
+    }
+    dialog.value = false
   }
 
   function deleteTask(task: Task) {
     if (confirm('Are you sure to delete')) {
       appStore.deleteTask(task)
     }
+  }
+
+  function newTask() {
+    dialog.value = true
+  }
+
+  function editTask(task: Task) {
+    selectedTask.value = task
+    dialog.value = true
   }
 </script>

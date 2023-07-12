@@ -34,13 +34,17 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function updateTask(task: Task) {
-    const toUpdate = tasks.value.find(t => t.id === task.id)
-    if (!toUpdate) {
-      throw new Error(`task not found: ${task.id}`)
-    }
-    toUpdate.label = task.label
-
     const sai = useSai(coreStore.userId)
+    if (task.id === 'DRAFT') {
+      tasks.value.push({...task, ...sai.getAccessModes(task)})
+    } else {
+      const toUpdate = tasks.value.find(t => t.id === task.id)
+      if (!toUpdate) {
+        throw new Error(`task not found: ${task.id}`)
+      }
+      toUpdate.label = task.label
+    }
+
     sai.updateTask(task)
   }
 
