@@ -65,7 +65,18 @@ export function useSai(userId: string | null) {
     webId = userId
   }
 
-  return { isAuthorized, getAuthorizationRedirectUri, getAgents, getProjects, getTasks, getFiles, getImages, dataUrl}
+  return {
+    isAuthorized,
+    getAuthorizationRedirectUri,
+    getAgents,
+    getProjects,
+    getTasks,
+    updateTask,
+    deleteTask,
+    getFiles,
+    getImages,
+    dataUrl
+  }
 }
 
 async function ensureSaiSession(): Promise<Application> {
@@ -135,6 +146,40 @@ async function getTasks(projectId: string): Promise<{projectId: string, tasks: T
   }
 
   return {projectId, tasks}
+}
+
+async function updateTask(task: Task): Promise<void> {
+  await ensureSaiSession()
+  let instance: DataInstance
+  if (task.id !== 'DRAFT') {
+    const cached = cache[task.id]
+    if (!cached) {
+      throw new Error(`Data Instance not found for: ${task.id}`)
+    }
+    instance = cached
+  } else {
+    const project = cache[task.project]
+    if (!project) {
+      throw new Error(`project not found ${task.project}`)
+    }
+    instance = await project.newChildDataInstance(shapeTrees.task)
+    cache[instance.iri] = instance
+  }
+
+  instance.replaceValue(RDFS.label, task.label);
+
+  await instance.update(instance.dataset)
+}
+
+
+async function deleteTask(task: Task): Promise<void> {
+  await ensureSaiSession()
+  let instance: DataInstance
+
+  instance = cache[task.id];
+  await instance.delete();
+
+  delete cache[task.id];
 }
 
 async function getFiles(projectId: string): Promise<{projectId: string, files: FileInstance[]}> {

@@ -33,6 +33,28 @@ export const useAppStore = defineStore('app', () => {
     tasks.value = data.tasks
   }
 
+  function updateTask(task: Task) {
+    const toUpdate = tasks.value.find(t => t.id === task.id)
+    if (!toUpdate) {
+      throw new Error(`task not found: ${task.id}`)
+    }
+    toUpdate.label = task.label
+
+    const sai = useSai(coreStore.userId)
+    sai.updateTask(task)
+  }
+
+  function deleteTask(task: Task) {
+    const toDelete = tasks.value.find(t => t.id === task.id)
+    if (!toDelete) {
+      throw new Error(`task not found: ${task.id}`)
+    }
+    tasks.value.splice(tasks.value.indexOf(toDelete), 1)
+
+    const sai = useSai(coreStore.userId)
+    sai.deleteTask(task)
+  }
+
   async function loadFiles(projectId: string): Promise<void> {
     const sai = useSai(coreStore.userId)
     const data = await sai.getFiles(projectId)
@@ -45,5 +67,19 @@ export const useAppStore = defineStore('app', () => {
     images.value = data.images
   }
 
-  return { agents, registrations, projects, tasks, files, images, loadAgents, loadProjects, loadTasks, loadFiles, loadImages }
+  return {
+    agents,
+    registrations,
+    projects,
+    tasks,
+    files,
+    images,
+    loadAgents,
+    loadProjects,
+    loadTasks,
+    updateTask,
+    deleteTask,
+    loadFiles,
+    loadImages
+  }
 })

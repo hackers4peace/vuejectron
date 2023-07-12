@@ -1,12 +1,9 @@
 <template>
-  <v-card-text>
     <h2>{{ project?.label }}</h2>
     <h3>Tasks</h3>
     <v-list>
       <v-list-item v-for="task in appStore.tasks" :key="task.id">
-        <router-link :to="{ name: 'task', query: { ...route.query, task: task.id } }">
-          {{ task.label}}
-        </router-link>
+        <task-card :task="task" @update="updateTask" @delete="deleteTask"></task-card>
       </v-list-item>
     </v-list>
     <h3>Files</h3>
@@ -23,7 +20,6 @@
         <img :src="dataUrl"/>
       </v-list-item>
     </v-list>
-  </v-card-text>
 </template>
 
 <script lang="ts" setup>
@@ -34,7 +30,9 @@
   import { useAppStore } from '@/store/app';
   import { useSai } from '@/sai'
   import { useCoreStore } from '@/store/core';
-  import { FileInstance } from '@/models';
+  import { FileInstance, Task } from '@/models';
+
+  import TaskCard from '@/components/TaskCard.vue';
 
   const download = ref<HTMLAnchorElement>()
 
@@ -69,6 +67,16 @@
       download.value.click()
     } else {
       console.log('download!')
+    }
+  }
+
+  function updateTask(task: Task) {
+    appStore.updateTask(task)
+  }
+
+  function deleteTask(task: Task) {
+    if (confirm('Are you sure to delete')) {
+      appStore.deleteTask(task)
     }
   }
 </script>
