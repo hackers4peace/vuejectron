@@ -33,19 +33,20 @@ export const useAppStore = defineStore('app', () => {
     tasks.value = data.tasks
   }
 
-  function updateTask(task: Task) {
+  async function updateTask(task: Task) {
     const sai = useSai(coreStore.userId)
+    const updated = await sai.updateTask(task)
+
     if (task.id === 'DRAFT') {
-      tasks.value.push({...task, ...sai.getAccessModes(task)})
+      tasks.value.push(updated)
     } else {
       const toUpdate = tasks.value.find(t => t.id === task.id)
       if (!toUpdate) {
         throw new Error(`task not found: ${task.id}`)
       }
-      toUpdate.label = task.label
+      toUpdate.label = updated.label
     }
-
-    sai.updateTask(task)
+    sai.update(updated.id)
   }
 
   function deleteTask(task: Task) {
@@ -63,6 +64,22 @@ export const useAppStore = defineStore('app', () => {
     const sai = useSai(coreStore.userId)
     const data = await sai.getFiles(projectId)
     files.value = data.files
+  }
+
+  async function updateFile(file: FileInstance, blob?: File) {
+    const sai = useSai(coreStore.userId)
+    const updated = await sai.updateFile(file, blob)
+
+    if (file.id === 'DRAFT') {
+      files.value.push(updated)
+    } else {
+      const toUpdate = files.value.find(t => t.id === file.id)
+      if (!toUpdate) {
+        throw new Error(`task not found: ${file.id}`)
+      }
+      toUpdate.filename = updated.filename
+    }
+    sai.update(updated.id, blob)
   }
 
   async function loadImages(projectId: string): Promise<void> {
@@ -84,6 +101,7 @@ export const useAppStore = defineStore('app', () => {
     updateTask,
     deleteTask,
     loadFiles,
+    updateFile,
     loadImages
   }
 })

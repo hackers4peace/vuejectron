@@ -2,7 +2,7 @@
     <h2>{{ project?.label }}</h2>
     <h3>
       Tasks
-      <v-btn size="small" @click="newTask" color="surface-variant" variant="text" icon="mdi-plus"></v-btn>
+      <v-btn v-if="project?.canAddTasks" size="small" @click="newTask" color="surface-variant" variant="text" icon="mdi-plus"></v-btn>
     </h3>
     <v-list>
       <v-list-item v-for="task in appStore.tasks" :key="task.id">
@@ -15,8 +15,10 @@
         </v-card>
       </v-list-item>
     </v-list>
-    <h3>Files</h3>
-    <a ref="download" style="visibility: hidden;"></a>
+    <h3>
+      Files
+      <v-btn v-if="project?.canAddFiles" size="small" @click="upload?.click()" color="surface-variant" variant="text" icon="mdi-plus"></v-btn>
+    </h3>
     <v-list>
       <v-list-item v-for="file in appStore.files" :key="file.id">
         {{ file.filename }}
@@ -30,6 +32,12 @@
       </v-list-item>
     </v-list>
     <input-dialog :text="selectedTask?.label" :dialog="dialog" @cancel="dialog = false" @save="updateTask"></input-dialog>
+    <a ref="download" style="visibility: hidden;"></a>
+    <input
+      ref="upload"
+      @change="uploadFile($event)"
+      type="file"
+      style="visibility: hidden;">
 </template>
 
 <script lang="ts" setup>
@@ -45,6 +53,7 @@
   import InputDialog from '@/components/InputDialog.vue';
 
   const download = ref<HTMLAnchorElement>()
+  const upload = ref<HTMLInputElement>()
 
   const coreSotre = useCoreStore()
   const sai = useSai(coreSotre.userId)
@@ -110,5 +119,15 @@
   function editTask(task: Task) {
     selectedTask.value = task
     dialog.value = true
+  }
+
+  function uploadFile(event: Event) {
+    const target = event.target as HTMLInputElement
+    const blob = target.files?.item(0)
+    if (blob && project.value) {
+        const file = {id: 'DRAFT', project: project.value.id, owner: project.value.owner}
+        console.log(appStore.updateFile)
+        appStore.updateFile(file, blob)
+    }
   }
 </script>

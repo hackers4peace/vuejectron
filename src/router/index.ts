@@ -16,19 +16,14 @@ const routes = [
           {
             path: '/project',
             name: 'project',
-            component: () => import(/* webpackChunkName: "login" */ '@/views/Project.vue'),
-          },
-          {
-            path: '/task',
-            name: 'task',
-            component: () => import(/* webpackChunkName: "login" */ '@/views/Task.vue'),
-          },
+            component: () => import(/* webpackChunkName: "project" */ '@/views/Project.vue'),
+          }
         ]
       },
       {
         path: '/login',
         name: 'login',
-        component: () => import(/* webpackChunkName: "login" */ '@/views/Authn.vue'),
+        component: () => import(/* webpackChunkName: "authn" */ '@/views/Authn.vue'),
         meta: { public: true }
       },
       {

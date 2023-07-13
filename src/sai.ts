@@ -41,7 +41,7 @@ function instance2Task(instance: DataInstance, project: string, owner: string): 
   }
 }
 
-function instance2File(instance: DataInstance, project: string, owner: string): Image {
+function instance2File(instance: DataInstance, project: string, owner: string): FileInstance {
   return {
     id: instance.iri,
     filename: instance.getObject(NFO.fileName)?.value,
@@ -88,8 +88,10 @@ export function useSai(userId: string | null) {
     updateTask,
     deleteTask,
     getFiles,
+    updateFile,
     getImages,
     dataUrl,
+    update,
     getAccessModes,
   }
 }
@@ -163,8 +165,12 @@ async function getTasks(projectId: string): Promise<{projectId: string, tasks: T
   return {projectId, tasks}
 }
 
-async function updateTask(task: Task): Promise<void> {
+async function updateTask(task: Task): Promise<Task> {
   await ensureSaiSession()
+  const project = cache[task.project]
+  if (!project) {
+    throw new Error(`project not found ${task.project}`)
+  }
   let instance: DataInstance
   if (task.id !== 'DRAFT') {
     const cached = cache[task.id]
@@ -173,17 +179,13 @@ async function updateTask(task: Task): Promise<void> {
     }
     instance = cached
   } else {
-    const project = cache[task.project]
-    if (!project) {
-      throw new Error(`project not found ${task.project}`)
-    }
     instance = await project.newChildDataInstance(shapeTrees.task)
     cache[instance.iri] = instance
   }
 
   instance.replaceValue(RDFS.label, task.label);
 
-  await instance.update(instance.dataset)
+  return instance2Task(instance, project.iri, ownerIndex[project.iri])
 }
 
 
@@ -212,6 +214,35 @@ async function getFiles(projectId: string): Promise<{projectId: string, files: F
   return {projectId, files}
 }
 
+
+async function updateFile(file: FileInstance, blob?: File): Promise<FileInstance> {
+  await ensureSaiSession()
+  let instance: DataInstance
+  if (file.id !== 'DRAFT') {
+    const cached = cache[file.id]
+    if (!cached) {
+      throw new Error(`Data Instance not found for: ${file.id}`)
+    }
+    instance = cached
+  } else {
+    if (!blob) {
+      throw new Error(`image file missing`)
+    }
+    const project = cache[file.project]
+    if (!project) {
+      throw new Error(`project not found ${file.project}`)
+    }
+
+    instance = await project.newChildDataInstance(shapeTrees.file)
+    instance.replaceValue(NFO.fileName, blob.name)
+    instance.replaceValue(AWOL.type, blob.type)
+    cache[instance.iri] = instance
+  }
+
+  return instance2File(instance, file.project, file.owner)
+}
+
+
 async function getImages(projectId: string): Promise<{projectId: string, images: ImageInstance[]}> {
   await ensureSaiSession()
   const project = cache[projectId]
@@ -227,6 +258,14 @@ async function getImages(projectId: string): Promise<{projectId: string, images:
   return {projectId, images}
 }
 
+
+async function update(iri: string, blob?: File) {
+  const instance = cache[iri]
+  if (!instance) {
+    throw new Error(`Instance not found for: ${iri}`)
+  }
+  return instance.update(instance.dataset, blob)
+}
 
 async function dataUrl(url: string): Promise<string> {
   const fetch = getDefaultSession().fetch
