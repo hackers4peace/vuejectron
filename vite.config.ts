@@ -35,7 +35,22 @@ export default defineConfig({
       '.vue',
     ],
   },
+  optimizeDeps: {
+    exclude: [
+      '@janeirodigital/interop-application',
+      '@janeirodigital/interop-utils',
+      '@janeirodigital/interop-data-model'
+    ],
+    include: [
+      'jsonld-streaming-parser',
+      'n3',
+      'http-link-header'
+    ]
+  },
   server: {
     port: 4500,
+    fs: {
+      strict: false
+    }
   },
 })

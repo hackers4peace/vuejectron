@@ -12,6 +12,7 @@
     "@inrupt/solid-client-authn-browser": "^1.16.0",
     "@janeirodigital/interop-application": "^1.0.0-rc.20",
     "@janeirodigital/interop-utils": "^1.0.0-rc.20",
+    "@janeirodigital/interop-data-model": "^1.0.0-rc.20",
     "@mdi/font": "7.0.96",
     "@vueuse/core": "^10.2.1",
     "core-js": "^3.29.0",

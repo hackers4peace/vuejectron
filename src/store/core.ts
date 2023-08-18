@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue';
 import { ISessionInfo, getDefaultSession, handleIncomingRedirect, login as oidcLogin} from "@inrupt/solid-client-authn-browser";
-import { Application } from '@janeirodigital/interop-application';
 import { useSai } from '@/sai';
 
 class OidcError extends Error {
@@ -31,7 +30,7 @@ export const useCoreStore = defineStore('core', () => {
     }
     userId.value = oidcInfo.webId
 
-    const sai = await useSai(oidcInfo.webId)
+    const sai = useSai(oidcInfo.webId)
 
     isAuthorized.value = await sai.isAuthorized()
   }
@@ -40,7 +39,7 @@ export const useCoreStore = defineStore('core', () => {
     if (!userId.value) {
       throw new Error('no user id');
     }
-    const sai = await useSai(userId.value!)
+    const sai = useSai(userId.value)
     window.location.href = await sai.getAuthorizationRedirectUri()
   }
 

@@ -1,6 +1,6 @@
 // Utilities
 import { defineStore } from 'pinia'
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { Agent, FileInstance, ImageInstance, Project, Registration, Task } from '@/models'
 import { useSai } from '@/sai'
 import { useCoreStore } from './core'
@@ -14,6 +14,21 @@ export const useAppStore = defineStore('app', () => {
   const tasks = ref<Task[]>([])
   const files = ref<FileInstance[]>([])
   const images = ref<ImageInstance[]>([])
+
+  // DO NOT AWAIT! (infinite loop)
+  async function watchSai(): Promise<void> {
+    const sai = useSai(coreStore.userId)
+    const stream = await sai.getStream()
+    if (stream.locked) return
+    const reader = stream.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      if (value.type === 'GRANT') loadAgents()
+    }
+  }
 
   async function loadAgents(): Promise<void> {
     const sai = useSai(coreStore.userId)
@@ -95,6 +110,7 @@ export const useAppStore = defineStore('app', () => {
     tasks,
     files,
     images,
+    watchSai,
     loadAgents,
     loadProjects,
     loadTasks,

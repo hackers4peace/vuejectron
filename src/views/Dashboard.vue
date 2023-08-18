@@ -12,7 +12,7 @@
       </v-app-bar>
 
       <v-navigation-drawer v-model="drawer" location="left">
-        <v-select v-model="currentAgent" :items="agents" item-title="label" item-value="id">
+        <v-select v-model="currentAgent" :items="appStore.agents" item-title="label" item-value="id">
         </v-select>
         <div v-for="registrtion in registrations">
           <h3>{{ registrtion.label }}</h3>
@@ -32,11 +32,25 @@
       </v-main>
     </v-layout>
   </v-card>
+  <v-snackbar v-model="showSnackbar" color="info">
+    <v-icon icon="mdi-share-variant"></v-icon>
+    Data from new peer - <strong>{{ newAgent?.label }}</strong>
+    <template v-slot:actions>
+      <v-btn
+        color="white"
+        variant="outlined"
+        @click="router.push({ name: 'dashboard', query: { agent: newAgent?.id } })"
+      >
+        Show
+      </v-btn>
+    </template>
+   </v-snackbar>
 </template>
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAppStore } from '@/store/app';
+import { Agent } from '@/models';
 const route = useRoute()
 const router = useRouter()
 
@@ -44,6 +58,8 @@ const drawer = ref(true)
 
 const currentAgent = ref(route.query.agent)
 const currentProject = ref(route.query.project)
+const newAgent = ref<Agent>()
+const showSnackbar = ref(false)
 
 const registrations = computed(() => {
   return appStore.registrations.map(registration => ({
@@ -53,13 +69,14 @@ const registrations = computed(() => {
 })
 
 const appStore = useAppStore()
+appStore.watchSai()
 await appStore.loadAgents()
-const agents = appStore.agents
 
 watch(
   () => route.query.agent,
   agent => {
     currentAgent.value = agent
+    showSnackbar.value = false
   }
 )
 
@@ -76,5 +93,19 @@ watch(currentAgent, async selectedAgent => {
   }
   router.push({ name: 'dashboard', query: { agent: selectedAgent } })
 }, { immediate: true })
+
+watch(
+  () => appStore.agents,
+  (latestAgents, previousAgents) => {
+    newAgent.value = latestAgents.find(agent => !previousAgents.some(a => a.id === agent.id))
+  }
+)
+
+watch(
+  newAgent,
+  (agent) => {
+    showSnackbar.value = true
+  }
+)
 
 </script>

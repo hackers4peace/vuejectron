@@ -1,8 +1,8 @@
 import { getDefaultSession } from "@inrupt/solid-client-authn-browser";
-import { Application } from "@janeirodigital/interop-application";
+import { Application, SaiEvent } from "@janeirodigital/interop-application";
 import { Agent, Project, Registration, Task, FileInstance, ImageInstance } from "@/models";
 import { ACL, RDFS, buildNamespace } from "@janeirodigital/interop-utils";
-import { DataInstance } from "@janeirodigital/interop-data-model";
+import type { DataInstance } from "@janeirodigital/interop-data-model";
 
 const cache: { [key: string]: DataInstance } = {}
 const ownerIndex: { [key: string]: string } = {}
@@ -80,6 +80,7 @@ export function useSai(userId: string | null) {
   }
 
   return {
+    getStream,
     isAuthorized,
     getAuthorizationRedirectUri,
     getAgents,
@@ -99,7 +100,13 @@ export function useSai(userId: string | null) {
 async function ensureSaiSession(): Promise<Application> {
   if (saiSession) return saiSession
   const deps = { fetch: authnFetch, randomUUID: crypto.randomUUID.bind(crypto) }
-  return saiSession = await Application.build(webId, import.meta.env.VITE_APPLICATION_ID, deps)
+  saiSession = await Application.build(webId, import.meta.env.VITE_APPLICATION_ID, deps)
+  return saiSession
+}
+
+async function getStream(): Promise<ReadableStream<SaiEvent>> {
+  const session = await ensureSaiSession()
+  return session.stream
 }
 
 async function isAuthorized(): Promise<boolean> {
@@ -121,7 +128,7 @@ async function getAgents(): Promise<Agent[]> {
 
   return profiles.map(profile => ({
     id: profile.iri,
-    label: profile.label || 'unknown' // TODO think of a better fallback
+    label: profile.label ?? 'unknown' // TODO think of a better fallback
   }))
 }
 
